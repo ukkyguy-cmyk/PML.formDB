@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Form Submission Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -27,72 +26,63 @@
     top: 0;
     z-index: 100;
   }
-  .header-left {
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .dot { width: 8px; height: 8px; background: #c9a84c; border-radius: 50%; flex-shrink: 0; }
+  .header-title { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a84c; }
+  .header-sub { font-size: 11px; color: #555; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .count-badge { font-size: 11px; color: #888; }
+  .btn {
+    background: transparent; border: 1px solid #c9a84c; color: #c9a84c;
+    padding: 5px 14px; font-size: 11px; cursor: pointer;
+    letter-spacing: 0.06em; font-weight: 600; border-radius: 2px;
+  }
+  .btn:hover { background: rgba(201,168,76,0.08); }
+  .btn-ghost { border-color: #333; color: #555; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.03); color: #888; }
+
+  /* API KEY BAR */
+  .apikey-bar {
+    background: #0f0f0f;
+    border-bottom: 1px solid #1e1e1e;
+    padding: 10px 24px;
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
   }
-  .dot {
-    width: 8px;
-    height: 8px;
-    background: #c9a84c;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
-  }
-  .header-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #c9a84c;
-  }
-  .header-sub {
-    font-size: 11px;
-    color: #555;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .count-badge {
-    font-size: 11px;
-    color: #888;
-  }
-  .btn {
-    background: transparent;
-    border: 1px solid #c9a84c;
-    color: #c9a84c;
-    padding: 5px 14px;
-    font-size: 11px;
-    cursor: pointer;
-    letter-spacing: 0.06em;
-    font-weight: 600;
+  .apikey-label { font-size: 11px; color: #555; letter-spacing: 0.06em; white-space: nowrap; }
+  .apikey-input {
+    flex: 1;
+    min-width: 240px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #e8e8e8;
+    padding: 6px 12px;
+    font-size: 12px;
     border-radius: 2px;
+    font-family: monospace;
+    outline: none;
   }
-  .btn:hover { background: rgba(201,168,76,0.08); }
-  .btn-ghost {
-    border-color: #333;
-    color: #555;
+  .apikey-input:focus { border-color: #c9a84c; }
+  .apikey-input.ok { border-color: #4caf7d; }
+  .apikey-save {
+    background: transparent; border: 1px solid #333; color: #888;
+    padding: 5px 12px; font-size: 11px; cursor: pointer; border-radius: 2px;
+    white-space: nowrap;
   }
-  .btn-ghost:hover { background: rgba(255,255,255,0.03); color: #888; }
+  .apikey-save:hover { border-color: #c9a84c; color: #c9a84c; }
+  .apikey-hint { font-size: 10px; color: #444; }
+  .apikey-hint a { color: #c9a84c; }
 
   /* DROP ZONE */
   .dropzone-wrap { padding: 20px 24px 0; }
   .dropzone {
-    border: 2px dashed #222;
-    border-radius: 4px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
+    border: 2px dashed #222; border-radius: 4px; padding: 24px;
+    text-align: center; cursor: pointer; transition: all 0.15s; user-select: none;
   }
-  .dropzone:hover, .dropzone.over {
-    border-color: #c9a84c;
-    background: rgba(201,168,76,0.03);
-  }
+  .dropzone:hover, .dropzone.over { border-color: #c9a84c; background: rgba(201,168,76,0.03); }
+  .dropzone.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
   .dropzone-icon { font-size: 22px; margin-bottom: 6px; }
   .dropzone-text { font-size: 12px; color: #888; }
   .dropzone-text span { color: #c9a84c; text-decoration: underline; }
@@ -101,157 +91,71 @@
   /* PROGRESS */
   .progress-wrap { text-align: center; }
   .progress-label { font-size: 12px; color: #c9a84c; margin-bottom: 8px; letter-spacing: 0.06em; }
-  .progress-bar-bg {
-    height: 3px;
-    background: #222;
-    border-radius: 2px;
-    max-width: 320px;
-    margin: 0 auto;
-    overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%;
-    background: #c9a84c;
-    border-radius: 2px;
-    transition: width 0.3s;
-  }
+  .progress-bar-bg { height: 3px; background: #222; border-radius: 2px; max-width: 320px; margin: 0 auto; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: #c9a84c; border-radius: 2px; transition: width 0.3s; }
   .progress-detail { font-size: 11px; color: #555; margin-top: 6px; }
 
   /* MAIN */
   .main { padding: 16px 24px; display: flex; gap: 16px; }
-
-  /* EMPTY */
   .empty {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #444;
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    min-height: 200px;
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: #444; font-size: 12px; letter-spacing: 0.04em; min-height: 200px;
   }
 
   /* TABLE */
   .table-wrap {
-    flex: 1;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: calc(100vh - 190px);
-    border: 1px solid #222;
-    border-radius: 4px;
+    flex: 1; overflow-x: auto; overflow-y: auto;
+    max-height: calc(100vh - 230px);
+    border: 1px solid #222; border-radius: 4px;
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    table-layout: fixed;
-  }
-  thead {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  thead { position: sticky; top: 0; z-index: 2; }
   th {
-    background: #141414;
-    padding: 9px 12px;
-    text-align: left;
-    color: #555;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    font-size: 10px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #222;
-    border-right: 1px solid #1a1a1a;
+    background: #141414; padding: 9px 12px; text-align: left;
+    color: #555; font-weight: 600; letter-spacing: 0.08em; font-size: 10px;
+    text-transform: uppercase; border-bottom: 1px solid #222; border-right: 1px solid #1a1a1a;
   }
   th:last-child { border-right: none; }
-  td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #1a1a1a;
-    border-right: 1px solid #1a1a1a;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: #888;
-  }
+  td { padding: 8px 12px; border-bottom: 1px solid #1a1a1a; border-right: 1px solid #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #888; }
   td:last-child { border-right: none; }
   td.td-name { color: #e8e8e8; }
   td.td-email { color: #c9a84c; }
-  td.td-msg {
-    white-space: normal;
-    line-height: 1.5;
-    max-width: 0;
-  }
+  td.td-msg { white-space: normal; line-height: 1.5; }
   tr { cursor: pointer; transition: background 0.1s; }
   tr:nth-child(even) td { background: #111; }
   tr:hover td { background: rgba(201,168,76,0.05) !important; }
   tr.selected td { background: rgba(201,168,76,0.08) !important; }
-  .del-btn {
-    background: transparent;
-    border: none;
-    color: #444;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 2px 6px;
-    line-height: 1;
-  }
+  .del-btn { background: transparent; border: none; color: #444; cursor: pointer; font-size: 14px; padding: 2px 6px; line-height: 1; }
   .del-btn:hover { color: #cf6679; }
 
-  /* DETAIL PANEL */
+  /* DETAIL */
   .detail {
-    flex: 0 0 36%;
-    background: #141414;
-    border: 1px solid #222;
-    border-radius: 4px;
-    padding: 20px;
-    overflow-y: auto;
-    max-height: calc(100vh - 190px);
-    position: relative;
+    flex: 0 0 36%; background: #141414; border: 1px solid #222;
+    border-radius: 4px; padding: 20px; overflow-y: auto;
+    max-height: calc(100vh - 230px); position: relative;
   }
-  .detail-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: transparent;
-    border: none;
-    color: #444;
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-  }
+  .detail-close { position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: #444; cursor: pointer; font-size: 16px; }
   .detail-close:hover { color: #e8e8e8; }
-  .detail-tag {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: #c9a84c;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    font-weight: 700;
-  }
+  .detail-tag { font-size: 10px; letter-spacing: 0.1em; color: #c9a84c; text-transform: uppercase; margin-bottom: 16px; font-weight: 700; }
   .detail-field { margin-bottom: 16px; }
-  .detail-label {
-    font-size: 10px;
-    color: #444;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-    font-weight: 600;
-  }
-  .detail-value {
-    font-size: 13px;
-    color: #e8e8e8;
-    line-height: 1.7;
-    word-break: break-all;
-  }
+  .detail-label { font-size: 10px; color: #444; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+  .detail-value { font-size: 13px; color: #e8e8e8; line-height: 1.7; word-break: break-all; }
   .detail-value.email { color: #c9a84c; }
   .detail-value.empty-val { color: #444; }
   .detail-divider { height: 1px; background: #1e1e1e; margin-top: 12px; }
   .detail-source { font-size: 10px; color: #333; margin-top: 12px; }
 
-  /* ERROR ROW */
-  td.error { color: #cf6679; font-size: 11px; }
-
   input[type=file] { display: none; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1e1e1e; border: 1px solid #333; color: #e8e8e8;
+    padding: 10px 20px; border-radius: 4px; font-size: 12px;
+    opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { border-color: #cf6679; color: #cf6679; }
 </style>
 </head>
 <body>
@@ -270,30 +174,41 @@
   </div>
 </div>
 
+<!-- API KEY BAR -->
+<div class="apikey-bar">
+  <span class="apikey-label">Gemini API Key</span>
+  <input type="password" class="apikey-input" id="apikey-input" placeholder="AIza..." oninput="onKeyInput()">
+  <button class="apikey-save" onclick="saveKey()">保存</button>
+  <span class="apikey-hint">キーは <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a> で無料取得 → ブラウザにのみ保存されます</span>
+</div>
+
 <!-- DROP ZONE -->
 <div class="dropzone-wrap">
-  <label class="dropzone" id="dropzone" for="file-input"
+  <label class="dropzone disabled" id="dropzone" for="file-input"
     ondrop="handleDrop(event)"
     ondragover="handleDragOver(event)"
     ondragleave="handleDragLeave(event)">
     <div id="dropzone-content">
       <div class="dropzone-icon">📋</div>
       <div class="dropzone-text">スクショをドラッグ＆ドロップ、または<span>クリックして選択</span></div>
-      <div class="dropzone-hint">複数ファイル同時対応 / PNG・JPG・WebP</div>
+      <div class="dropzone-hint">複数ファイル同時対応 / PNG・JPG・WebP　※先にAPIキーを入力してください</div>
     </div>
     <div id="progress-content" style="display:none" class="progress-wrap">
       <div class="progress-label" id="progress-label">抽出中...</div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
       <div class="progress-detail" id="progress-detail"></div>
     </div>
-    <input type="file" id="file-input" accept="image/*" multiple onchange="handleFileInput(event)">
+    <input type="file" id="file-input" accept="image/*" multiple onchange="handleFileInput(event)" disabled>
   </label>
 </div>
 
 <!-- MAIN -->
 <div class="main" id="main">
-  <div class="empty" id="empty-msg">スクショをアップロードすると、ここに一覧が表示されます</div>
+  <div class="empty">APIキーを入力してスクショをアップロードしてください</div>
 </div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
 const FIELDS = ['name','email','affiliation','message','submitted'];
@@ -303,88 +218,107 @@ const COL_WIDTHS = ['13%','18%','17%','34%','14%','4%'];
 let rows = [];
 let selectedId = null;
 let processing = false;
+let apiKey = '';
 
-// ── OCR + パース ──────────────────────────────────────────────
-async function extractFromImage(file) {
-  const worker = await Tesseract.createWorker('jpn+eng', 1, {
-    logger: () => {}
+// ── API Key ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('gemini_api_key');
+  if (saved) {
+    apiKey = saved;
+    document.getElementById('apikey-input').value = saved;
+    document.getElementById('apikey-input').classList.add('ok');
+    enableDropzone();
+  }
+});
+
+function onKeyInput() {
+  const val = document.getElementById('apikey-input').value.trim();
+  document.getElementById('apikey-input').classList.remove('ok');
+  if (val) { enableDropzone(); } else { disableDropzone(); }
+}
+
+function saveKey() {
+  const val = document.getElementById('apikey-input').value.trim();
+  if (!val) { showToast('APIキーを入力してください', true); return; }
+  apiKey = val;
+  localStorage.setItem('gemini_api_key', val);
+  document.getElementById('apikey-input').classList.add('ok');
+  enableDropzone();
+  showToast('APIキーを保存しました');
+}
+
+function enableDropzone() {
+  apiKey = document.getElementById('apikey-input').value.trim();
+  document.getElementById('dropzone').classList.remove('disabled');
+  document.getElementById('file-input').disabled = false;
+}
+function disableDropzone() {
+  document.getElementById('dropzone').classList.add('disabled');
+  document.getElementById('file-input').disabled = true;
+}
+
+// ── Gemini Vision ─────────────────────────────────────────────
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
   });
-  const url = URL.createObjectURL(file);
-  const { data: { text } } = await worker.recognize(url);
-  await worker.terminate();
-  URL.revokeObjectURL(url);
-  return parseFormText(text);
 }
 
-function parseFormText(raw) {
-  // 改行で分割し、空行除去
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  const result = { name:'', email:'', affiliation:'', message:'', submitted:'' };
+async function extractFromImage(file) {
+  const b64 = await fileToBase64(file);
+  const mime = file.type || 'image/jpeg';
 
-  const fieldKeys = {
-    name: ['name'],
-    email: ['email'],
-    affiliation: ['affiliation','所属'],
-    message: ['message'],
-    submitted: ['submitted','submitted']
-  };
+  const prompt = `This is a screenshot of a Japanese form submission notification email.
+Extract exactly these fields and return ONLY a JSON object, no markdown, no explanation:
+- name (氏名)
+- email
+- affiliation (所属・組織名)
+- message (メッセージ本文、全文)
+- submitted (申込日時、例: "05:14 AM - 24 April 2026")
 
-  let currentField = null;
-  let msgLines = [];
-  let msgMode = false;
+If a field is missing use empty string "".
+Return format: {"name":"...","email":"...","affiliation":"...","message":"...","submitted":"..."}`;
 
-  for (let i = 0; i < lines.length; i++) {
-    const low = lines[i].toLowerCase();
-
-    // フィールドラベル検出
-    if (low === 'name') { currentField = 'name'; msgMode = false; continue; }
-    if (low === 'email') { currentField = 'email'; msgMode = false; continue; }
-    if (low === 'affiliation' || low === '所属') { currentField = 'affiliation'; msgMode = false; continue; }
-    if (low === 'message') { currentField = 'message'; msgMode = true; msgLines = []; continue; }
-    if (low.startsWith('submitted') || low.startsWith('submitted')) {
-      msgMode = false;
-      currentField = 'submitted';
-      // "Submitted 05:14 AM - 24 April 2026" のような行
-      const match = lines[i].match(/submitted\s+(.+)/i);
-      if (match) { result.submitted = match[1].trim(); currentField = null; }
-      continue;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mime, data: b64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: { temperature: 0, maxOutputTokens: 1024 }
+      })
     }
+  );
 
-    // Mark as spam行はスキップ
-    if (low.includes('mark as spam') || low.includes('spam')) continue;
-    // New form submission行はスキップ
-    if (low.includes('new form submission') || low.includes('参加申込')) continue;
-    // Someone just submitted はスキップ
-    if (low.includes('someone just submitted') || low.includes('here\'s what')) continue;
-
-    if (msgMode) {
-      msgLines.push(lines[i]);
-    } else if (currentField && !result[currentField]) {
-      result[currentField] = lines[i];
-    }
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err?.error?.message || `HTTP ${res.status}`);
   }
 
-  if (msgMode && msgLines.length) {
-    result.message = msgLines.join('\n').trim();
-  }
-
-  // email補正: @含む行をemail確定
-  if (!result.email) {
-    const emailLine = lines.find(l => l.includes('@') && !l.includes('submitted'));
-    if (emailLine) result.email = emailLine.trim();
-  }
-
-  return result;
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
 }
 
-// ── ファイル処理 ──────────────────────────────────────────────
+// ── File handling ─────────────────────────────────────────────
 async function processFiles(files) {
   if (processing) return;
+  if (!apiKey) { showToast('APIキーを入力してください', true); return; }
   const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!imgs.length) return;
 
   processing = true;
-  showProgress(0, imgs.length, imgs[0].name);
+  showProgress(0, imgs.length, '');
 
   for (let i = 0; i < imgs.length; i++) {
     updateProgress(i, imgs.length, imgs[i].name);
@@ -392,7 +326,12 @@ async function processFiles(files) {
       const extracted = await extractFromImage(imgs[i]);
       rows.push({ ...extracted, _id: Date.now() + i, _file: imgs[i].name, _error: false });
     } catch(e) {
-      rows.push({ name:'', email:'', affiliation:'', message:'OCRエラー: '+e.message, submitted:'', _id: Date.now()+i, _file: imgs[i].name, _error: true });
+      rows.push({
+        name: '', email: '', affiliation: '',
+        message: 'エラー: ' + e.message,
+        submitted: '', _id: Date.now() + i, _file: imgs[i].name, _error: true
+      });
+      showToast(imgs[i].name + ': ' + e.message, true);
     }
     updateProgress(i + 1, imgs.length, imgs[i].name);
   }
@@ -408,15 +347,15 @@ function handleDragOver(e) { e.preventDefault(); document.getElementById('dropzo
 function handleDragLeave() { document.getElementById('dropzone').classList.remove('over'); }
 
 // ── Progress ──────────────────────────────────────────────────
-function showProgress(done, total, filename) {
+function showProgress(done, total, name) {
   document.getElementById('dropzone-content').style.display = 'none';
   document.getElementById('progress-content').style.display = 'block';
-  updateProgress(done, total, filename);
+  updateProgress(done, total, name);
 }
-function updateProgress(done, total, filename) {
+function updateProgress(done, total, name) {
   document.getElementById('progress-label').textContent = `抽出中... ${done} / ${total}`;
-  document.getElementById('progress-bar').style.width = `${(done/total)*100}%`;
-  document.getElementById('progress-detail').textContent = filename || '';
+  document.getElementById('progress-bar').style.width = `${total ? (done/total)*100 : 0}%`;
+  document.getElementById('progress-detail').textContent = name;
 }
 function hideProgress() {
   document.getElementById('dropzone-content').style.display = 'block';
@@ -426,13 +365,12 @@ function hideProgress() {
 // ── Render ────────────────────────────────────────────────────
 function render() {
   const main = document.getElementById('main');
-  const empty = document.getElementById('empty-msg');
   const csvBtn = document.getElementById('csv-btn');
   const clearBtn = document.getElementById('clear-btn');
   const badge = document.getElementById('count-badge');
 
   if (rows.length === 0) {
-    main.innerHTML = '<div class="empty" id="empty-msg">スクショをアップロードすると、ここに一覧が表示されます</div>';
+    main.innerHTML = '<div class="empty">スクショをアップロードすると、ここに一覧が表示されます</div>';
     csvBtn.style.display = 'none';
     clearBtn.style.display = 'none';
     badge.textContent = '';
@@ -444,17 +382,12 @@ function render() {
   csvBtn.style.display = '';
   clearBtn.style.display = '';
 
-  // Table HTML
   let tableHTML = `
-  <div class="table-wrap" id="table-wrap">
+  <div class="table-wrap">
     <table>
-      <colgroup>
-        ${COL_WIDTHS.map(w => `<col style="width:${w}">`).join('')}
-      </colgroup>
+      <colgroup>${COL_WIDTHS.map(w=>`<col style="width:${w}">`).join('')}</colgroup>
       <thead>
-        <tr>
-          <th>氏名</th><th>Email</th><th>所属</th><th>メッセージ</th><th>申込日時</th><th></th>
-        </tr>
+        <tr><th>氏名</th><th>Email</th><th>所属</th><th>メッセージ</th><th>申込日時</th><th></th></tr>
       </thead>
       <tbody>`;
 
@@ -463,23 +396,22 @@ function render() {
     const msg = row.message ? (row.message.length > 55 ? row.message.slice(0,55)+'…' : row.message) : '';
     tableHTML += `
       <tr class="${sel}" onclick="selectRow(${row._id})">
-        <td class="td-name">${esc(row.name) || '<span style="color:#333">—</span>'}</td>
-        <td class="td-email">${esc(row.email) || '<span style="color:#333">—</span>'}</td>
-        <td>${esc(row.affiliation) || '<span style="color:#333">—</span>'}</td>
-        <td class="td-msg ${row._error?'error':''}">${esc(msg) || '<span style="color:#333">—</span>'}</td>
-        <td>${esc(row.submitted) || '<span style="color:#333">—</span>'}</td>
+        <td class="td-name">${esc(row.name)||'<span style="color:#333">—</span>'}</td>
+        <td class="td-email">${esc(row.email)||'<span style="color:#333">—</span>'}</td>
+        <td>${esc(row.affiliation)||'<span style="color:#333">—</span>'}</td>
+        <td class="td-msg${row._error?' error':''}">${esc(msg)||'<span style="color:#333">—</span>'}</td>
+        <td>${esc(row.submitted)||'<span style="color:#333">—</span>'}</td>
         <td style="text-align:center"><button class="del-btn" onclick="deleteRow(event,${row._id})">×</button></td>
       </tr>`;
   });
 
   tableHTML += `</tbody></table></div>`;
 
-  // Detail panel
   let detailHTML = '';
   if (selectedId !== null) {
     const row = rows.find(r => r._id === selectedId);
     if (row) {
-      detailHTML = `<div class="detail" id="detail-panel">
+      detailHTML = `<div class="detail">
         <button class="detail-close" onclick="closeDetail()">×</button>
         <div class="detail-tag">Detail</div>
         ${FIELDS.map(f => `
@@ -488,7 +420,7 @@ function render() {
             <div class="detail-value ${f==='email'?'email':''} ${!row[f]?'empty-val':''}" style="white-space:${f==='message'?'pre-wrap':'normal'}">
               ${row[f] ? esc(row[f]) : '未入力'}
             </div>
-            ${f !== 'submitted' ? '<div class="detail-divider"></div>' : ''}
+            ${f!=='submitted'?'<div class="detail-divider"></div>':''}
           </div>`).join('')}
         <div class="detail-source">source: ${esc(row._file)}</div>
       </div>`;
@@ -502,42 +434,39 @@ function esc(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function selectRow(id) {
-  selectedId = selectedId === id ? null : id;
-  render();
-}
-
+function selectRow(id) { selectedId = selectedId===id ? null : id; render(); }
 function closeDetail() { selectedId = null; render(); }
-
 function deleteRow(e, id) {
   e.stopPropagation();
   rows = rows.filter(r => r._id !== id);
   if (selectedId === id) selectedId = null;
   render();
 }
-
 function clearAll() {
   if (!confirm('全データを削除しますか？')) return;
-  rows = [];
-  selectedId = null;
-  render();
+  rows = []; selectedId = null; render();
 }
 
-// ── CSV Export ────────────────────────────────────────────────
+// ── CSV ───────────────────────────────────────────────────────
 function exportCSV() {
   const headers = FIELDS.map(f => LABELS[f]).join(',');
   const lines = rows.map(row =>
     FIELDS.map(f => `"${(row[f]||'').replace(/"/g,'""')}"`).join(',')
   );
   const csv = [headers, ...lines].join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `form_submissions_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = `form_submissions_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError?' error':'');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
 }
 </script>
 </body>
