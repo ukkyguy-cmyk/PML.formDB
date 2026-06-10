@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Submission Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0a;
+    color: #e8e8e8;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  /* HEADER */
+  .header {
+    background: #141414;
+    border-bottom: 1px solid #222;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: #c9a84c;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .header-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c9a84c;
+  }
+  .header-sub {
+    font-size: 11px;
+    color: #555;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .count-badge {
+    font-size: 11px;
+    color: #888;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid #c9a84c;
+    color: #c9a84c;
+    padding: 5px 14px;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    border-radius: 2px;
+  }
+  .btn:hover { background: rgba(201,168,76,0.08); }
+  .btn-ghost {
+    border-color: #333;
+    color: #555;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.03); color: #888; }
+
+  /* DROP ZONE */
+  .dropzone-wrap { padding: 20px 24px 0; }
+  .dropzone {
+    border: 2px dashed #222;
+    border-radius: 4px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .dropzone:hover, .dropzone.over {
+    border-color: #c9a84c;
+    background: rgba(201,168,76,0.03);
+  }
+  .dropzone-icon { font-size: 22px; margin-bottom: 6px; }
+  .dropzone-text { font-size: 12px; color: #888; }
+  .dropzone-text span { color: #c9a84c; text-decoration: underline; }
+  .dropzone-hint { font-size: 11px; color: #444; margin-top: 4px; }
+
+  /* PROGRESS */
+  .progress-wrap { text-align: center; }
+  .progress-label { font-size: 12px; color: #c9a84c; margin-bottom: 8px; letter-spacing: 0.06em; }
+  .progress-bar-bg {
+    height: 3px;
+    background: #222;
+    border-radius: 2px;
+    max-width: 320px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #c9a84c;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .progress-detail { font-size: 11px; color: #555; margin-top: 6px; }
+
+  /* MAIN */
+  .main { padding: 16px 24px; display: flex; gap: 16px; }
+
+  /* EMPTY */
+  .empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #444;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    min-height: 200px;
+  }
+
+  /* TABLE */
+  .table-wrap {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 190px);
+    border: 1px solid #222;
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  th {
+    background: #141414;
+    padding: 9px 12px;
+    text-align: left;
+    color: #555;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #222;
+    border-right: 1px solid #1a1a1a;
+  }
+  th:last-child { border-right: none; }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #1a1a1a;
+    border-right: 1px solid #1a1a1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #888;
+  }
+  td:last-child { border-right: none; }
+  td.td-name { color: #e8e8e8; }
+  td.td-email { color: #c9a84c; }
+  td.td-msg {
+    white-space: normal;
+    line-height: 1.5;
+    max-width: 0;
+  }
+  tr { cursor: pointer; transition: background 0.1s; }
+  tr:nth-child(even) td { background: #111; }
+  tr:hover td { background: rgba(201,168,76,0.05) !important; }
+  tr.selected td { background: rgba(201,168,76,0.08) !important; }
+  .del-btn {
+    background: transparent;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+  .del-btn:hover { color: #cf6679; }
+
+  /* DETAIL PANEL */
+  .detail {
+    flex: 0 0 36%;
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 4px;
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 190px);
+    position: relative;
+  }
+  .detail-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .detail-close:hover { color: #e8e8e8; }
+  .detail-tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: #c9a84c;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+  .detail-field { margin-bottom: 16px; }
+  .detail-label {
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .detail-value {
+    font-size: 13px;
+    color: #e8e8e8;
+    line-height: 1.7;
+    word-break: break-all;
+  }
+  .detail-value.email { color: #c9a84c; }
+  .detail-value.empty-val { color: #444; }
+  .detail-divider { height: 1px; background: #1e1e1e; margin-top: 12px; }
+  .detail-source { font-size: 10px; color: #333; margin-top: 12px; }
+
+  /* ERROR ROW */
+  td.error { color: #cf6679; font-size: 11px; }
+
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="dot"></div>
+    <span class="header-title">Form Submission Dashboard</span>
+    <span class="header-sub">参加申込 抽出・管理</span>
+  </div>
+  <div class="header-right">
+    <span class="count-badge" id="count-badge"></span>
+    <button class="btn" id="csv-btn" style="display:none" onclick="exportCSV()">CSV Export</button>
+    <button class="btn btn-ghost" id="clear-btn" style="display:none" onclick="clearAll()">全削除</button>
+  </div>
+</div>
+
+<!-- DROP ZONE -->
+<div class="dropzone-wrap">
+  <label class="dropzone" id="dropzone" for="file-input"
+    ondrop="handleDrop(event)"
+    ondragover="handleDragOver(event)"
+    ondragleave="handleDragLeave(event)">
+    <div id="dropzone-content">
+      <div class="dropzone-icon">📋</div>
+      <div class="dropzone-text">スクショをドラッグ＆ドロップ、または<span>クリックして選択</span></div>
+      <div class="dropzone-hint">複数ファイル同時対応 / PNG・JPG・WebP</div>
+    </div>
+    <div id="progress-content" style="display:none" class="progress-wrap">
+      <div class="progress-label" id="progress-label">抽出中...</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+      <div class="progress-detail" id="progress-detail"></div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" multiple onchange="handleFileInput(event)">
+  </label>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="empty" id="empty-msg">スクショをアップロードすると、ここに一覧が表示されます</div>
+</div>
+
+<script>
+const FIELDS = ['name','email','affiliation','message','submitted'];
+const LABELS = {name:'氏名', email:'Email', affiliation:'所属', message:'メッセージ', submitted:'申込日時'};
+const COL_WIDTHS = ['13%','18%','17%','34%','14%','4%'];
+
+let rows = [];
+let selectedId = null;
+let processing = false;
+
+// ── OCR + パース ──────────────────────────────────────────────
+async function extractFromImage(file) {
+  const worker = await Tesseract.createWorker('jpn+eng', 1, {
+    logger: () => {}
+  });
+  const url = URL.createObjectURL(file);
+  const { data: { text } } = await worker.recognize(url);
+  await worker.terminate();
+  URL.revokeObjectURL(url);
+  return parseFormText(text);
+}
+
+function parseFormText(raw) {
+  // 改行で分割し、空行除去
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const result = { name:'', email:'', affiliation:'', message:'', submitted:'' };
+
+  const fieldKeys = {
+    name: ['name'],
+    email: ['email'],
+    affiliation: ['affiliation','所属'],
+    message: ['message'],
+    submitted: ['submitted','submitted']
+  };
+
+  let currentField = null;
+  let msgLines = [];
+  let msgMode = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const low = lines[i].toLowerCase();
+
+    // フィールドラベル検出
+    if (low === 'name') { currentField = 'name'; msgMode = false; continue; }
+    if (low === 'email') { currentField = 'email'; msgMode = false; continue; }
+    if (low === 'affiliation' || low === '所属') { currentField = 'affiliation'; msgMode = false; continue; }
+    if (low === 'message') { currentField = 'message'; msgMode = true; msgLines = []; continue; }
+    if (low.startsWith('submitted') || low.startsWith('submitted')) {
+      msgMode = false;
+      currentField = 'submitted';
+      // "Submitted 05:14 AM - 24 April 2026" のような行
+      const match = lines[i].match(/submitted\s+(.+)/i);
+      if (match) { result.submitted = match[1].trim(); currentField = null; }
+      continue;
+    }
+
+    // Mark as spam行はスキップ
+    if (low.includes('mark as spam') || low.includes('spam')) continue;
+    // New form submission行はスキップ
+    if (low.includes('new form submission') || low.includes('参加申込')) continue;
+    // Someone just submitted はスキップ
+    if (low.includes('someone just submitted') || low.includes('here\'s what')) continue;
+
+    if (msgMode) {
+      msgLines.push(lines[i]);
+    } else if (currentField && !result[currentField]) {
+      result[currentField] = lines[i];
+    }
+  }
+
+  if (msgMode && msgLines.length) {
+    result.message = msgLines.join('\n').trim();
+  }
+
+  // email補正: @含む行をemail確定
+  if (!result.email) {
+    const emailLine = lines.find(l => l.includes('@') && !l.includes('submitted'));
+    if (emailLine) result.email = emailLine.trim();
+  }
+
+  return result;
+}
+
+// ── ファイル処理 ──────────────────────────────────────────────
+async function processFiles(files) {
+  if (processing) return;
+  const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+
+  processing = true;
+  showProgress(0, imgs.length, imgs[0].name);
+
+  for (let i = 0; i < imgs.length; i++) {
+    updateProgress(i, imgs.length, imgs[i].name);
+    try {
+      const extracted = await extractFromImage(imgs[i]);
+      rows.push({ ...extracted, _id: Date.now() + i, _file: imgs[i].name, _error: false });
+    } catch(e) {
+      rows.push({ name:'', email:'', affiliation:'', message:'OCRエラー: '+e.message, submitted:'', _id: Date.now()+i, _file: imgs[i].name, _error: true });
+    }
+    updateProgress(i + 1, imgs.length, imgs[i].name);
+  }
+
+  processing = false;
+  hideProgress();
+  render();
+}
+
+function handleFileInput(e) { processFiles(e.target.files); e.target.value = ''; }
+function handleDrop(e) { e.preventDefault(); handleDragLeave(); processFiles(e.dataTransfer.files); }
+function handleDragOver(e) { e.preventDefault(); document.getElementById('dropzone').classList.add('over'); }
+function handleDragLeave() { document.getElementById('dropzone').classList.remove('over'); }
+
+// ── Progress ──────────────────────────────────────────────────
+function showProgress(done, total, filename) {
+  document.getElementById('dropzone-content').style.display = 'none';
+  document.getElementById('progress-content').style.display = 'block';
+  updateProgress(done, total, filename);
+}
+function updateProgress(done, total, filename) {
+  document.getElementById('progress-label').textContent = `抽出中... ${done} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${(done/total)*100}%`;
+  document.getElementById('progress-detail').textContent = filename || '';
+}
+function hideProgress() {
+  document.getElementById('dropzone-content').style.display = 'block';
+  document.getElementById('progress-content').style.display = 'none';
+}
+
+// ── Render ────────────────────────────────────────────────────
+function render() {
+  const main = document.getElementById('main');
+  const empty = document.getElementById('empty-msg');
+  const csvBtn = document.getElementById('csv-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const badge = document.getElementById('count-badge');
+
+  if (rows.length === 0) {
+    main.innerHTML = '<div class="empty" id="empty-msg">スクショをアップロードすると、ここに一覧が表示されます</div>';
+    csvBtn.style.display = 'none';
+    clearBtn.style.display = 'none';
+    badge.textContent = '';
+    selectedId = null;
+    return;
+  }
+
+  badge.textContent = rows.length + ' 件';
+  csvBtn.style.display = '';
+  clearBtn.style.display = '';
+
+  // Table HTML
+  let tableHTML = `
+  <div class="table-wrap" id="table-wrap">
+    <table>
+      <colgroup>
+        ${COL_WIDTHS.map(w => `<col style="width:${w}">`).join('')}
+      </colgroup>
+      <thead>
+        <tr>
+          <th>氏名</th><th>Email</th><th>所属</th><th>メッセージ</th><th>申込日時</th><th></th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  rows.forEach(row => {
+    const sel = row._id === selectedId ? 'selected' : '';
+    const msg = row.message ? (row.message.length > 55 ? row.message.slice(0,55)+'…' : row.message) : '';
+    tableHTML += `
+      <tr class="${sel}" onclick="selectRow(${row._id})">
+        <td class="td-name">${esc(row.name) || '<span style="color:#333">—</span>'}</td>
+        <td class="td-email">${esc(row.email) || '<span style="color:#333">—</span>'}</td>
+        <td>${esc(row.affiliation) || '<span style="color:#333">—</span>'}</td>
+        <td class="td-msg ${row._error?'error':''}">${esc(msg) || '<span style="color:#333">—</span>'}</td>
+        <td>${esc(row.submitted) || '<span style="color:#333">—</span>'}</td>
+        <td style="text-align:center"><button class="del-btn" onclick="deleteRow(event,${row._id})">×</button></td>
+      </tr>`;
+  });
+
+  tableHTML += `</tbody></table></div>`;
+
+  // Detail panel
+  let detailHTML = '';
+  if (selectedId !== null) {
+    const row = rows.find(r => r._id === selectedId);
+    if (row) {
+      detailHTML = `<div class="detail" id="detail-panel">
+        <button class="detail-close" onclick="closeDetail()">×</button>
+        <div class="detail-tag">Detail</div>
+        ${FIELDS.map(f => `
+          <div class="detail-field">
+            <div class="detail-label">${LABELS[f]}</div>
+            <div class="detail-value ${f==='email'?'email':''} ${!row[f]?'empty-val':''}" style="white-space:${f==='message'?'pre-wrap':'normal'}">
+              ${row[f] ? esc(row[f]) : '未入力'}
+            </div>
+            ${f !== 'submitted' ? '<div class="detail-divider"></div>' : ''}
+          </div>`).join('')}
+        <div class="detail-source">source: ${esc(row._file)}</div>
+      </div>`;
+    }
+  }
+
+  main.innerHTML = tableHTML + detailHTML;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function selectRow(id) {
+  selectedId = selectedId === id ? null : id;
+  render();
+}
+
+function closeDetail() { selectedId = null; render(); }
+
+function deleteRow(e, id) {
+  e.stopPropagation();
+  rows = rows.filter(r => r._id !== id);
+  if (selectedId === id) selectedId = null;
+  render();
+}
+
+function clearAll() {
+  if (!confirm('全データを削除しますか？')) return;
+  rows = [];
+  selectedId = null;
+  render();
+}
+
+// ── CSV Export ────────────────────────────────────────────────
+function exportCSV() {
+  const headers = FIELDS.map(f => LABELS[f]).join(',');
+  const lines = rows.map(row =>
+    FIELDS.map(f => `"${(row[f]||'').replace(/"/g,'""')}"`).join(',')
+  );
+  const csv = [headers, ...lines].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `form_submissions_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
